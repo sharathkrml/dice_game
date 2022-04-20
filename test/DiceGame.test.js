@@ -45,4 +45,86 @@ describe("DiceGame", function () {
       );
     });
   });
+  describe("Actual results", () => {
+    it("try distinct prediction", async () => {
+      let pred = [3, 2, 1, 5, 4, 6];
+      let res = 3;
+      let txn;
+      for (let i = 0; i < pred.length; i++) {
+        txn = await DiceGame.connect(accounts[i]).predict(pred[i]);
+        await txn.wait();
+      }
+      txn = await DiceGame.getRankList(res);
+      await txn.wait();
+      let a = await DiceGame.predictions(0);
+      //   1st
+      expect(a.from).to.equal(accounts[0].address);
+      a = await DiceGame.predictions(1);
+      //   2nd
+      expect(a.from).to.equal(accounts[1].address);
+      //   3rd
+      a = await DiceGame.predictions(2);
+      expect(a.from).to.equal(accounts[4].address);
+      //   4th
+      a = await DiceGame.predictions(3);
+      expect(a.from).to.equal(accounts[2].address);
+      //   5th
+      a = await DiceGame.predictions(4);
+      expect(a.from).to.equal(accounts[3].address);
+      //   6th
+      a = await DiceGame.predictions(5);
+      expect(a.from).to.equal(accounts[5].address);
+    });
+
+    it("try repeated prediction", async () => {
+      let pred = [1, 1, 2, 2, 3, 3];
+      let res = 2;
+      let txn;
+      for (let i = 0; i < pred.length; i++) {
+        txn = await DiceGame.connect(accounts[i]).predict(pred[i]);
+        await txn.wait();
+      }
+      txn = await DiceGame.getRankList(res);
+      await txn.wait();
+      //   1st
+      let a = await DiceGame.predictions(0);
+      expect(a.from).to.equal(accounts[2].address);
+      a = await DiceGame.predictions(1);
+      //   2nd
+      expect(a.from).to.equal(accounts[3].address);
+      //   3rd
+      a = await DiceGame.predictions(2);
+      expect(a.from).to.equal(accounts[0].address);
+      //   4th
+      a = await DiceGame.predictions(3);
+      expect(a.from).to.equal(accounts[1].address);
+      //   5th
+      a = await DiceGame.predictions(4);
+      expect(a.from).to.equal(accounts[4].address);
+      //   6th
+      a = await DiceGame.predictions(5);
+      expect(a.from).to.equal(accounts[5].address);
+    });
+  });
+  describe("Reset Predictions", () => {
+    it("delete all predictions", async () => {
+      let txn;
+      let res;
+      for (let i = 0; i < 6; i++) {
+        txn = await DiceGame.connect(accounts[i]).predict(i);
+        txn.wait();
+        expect(await DiceGame.count()).to.equal(i + 1);
+      }
+      res = await DiceGame.predictions(5);
+      expect(res.value).to.equals(5);
+      expect(await DiceGame.count()).to.equal(6);
+
+      txn = await DiceGame.resetPredictions();
+      txn.wait();
+      // after
+      res = await DiceGame.predictions(5);
+      expect(res.value).to.equals(0);
+      expect(await DiceGame.count()).to.equal(0);
+    });
+  });
 });
