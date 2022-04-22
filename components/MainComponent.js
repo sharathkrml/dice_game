@@ -3,7 +3,7 @@ import { Line } from "rc-progress";
 function MainComponent() {
   return (
     <div className="border-2 flex flex-col h-[100%] items-center">
-      <h1 className="text-4xl">Dice Game 🎲 </h1>
+      <h1 className="text-4xl text-[#7E22CE]">Dice Game 🎲 </h1>
       <div className="w-60">
         <Line percent="10" strokeWidth="4" strokeColor="red" />
       </div>
