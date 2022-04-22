@@ -3,8 +3,8 @@ import PredictionCard from "./PredictionCard";
 
 function ListPredictions() {
   return (
-    <div className="border-2">
-      <h2>Predictions</h2>
+    <div className="border-2 flex flex-col items-center">
+      <h2 className="text-white">Predictions</h2>
       <PredictionCard/>
       <PredictionCard/>
       <PredictionCard/>
