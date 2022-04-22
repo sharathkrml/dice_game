@@ -13,8 +13,8 @@ function MainComponent({ predictionCount, predict, notification }) {
           strokeColor="red"
         />
       </div>
-      {notification && <div className="text-white"> {notification}</div>}
-      <div className="text-white mt-5">Predict</div>
+      {notification && <div className="text-white mt-3"> {notification}</div>}
+      <div className="text-white mt-3">Predict</div>
       <div className="grid grid-cols-3 mt-5">
         <button className={btnStyle} onClick={() => predict(1)}>
           1

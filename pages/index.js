@@ -16,10 +16,14 @@ export default function Home() {
   const [tokenBalance, setTokenBalance] = useState(0);
   const [minting, setMinting] = useState(false);
   const [notification, setNotification] = useState("");
+  const [predictionslist, setPredictionslist] = useState([]);
   const Web3Ref = useRef();
   useEffect(() => {
     if (predictionCount == 6) {
       getDiceResult();
+    }
+    if (predictionCount != 0) {
+      getAllPredictions();
     }
   }, [predictionCount]);
 
@@ -36,7 +40,7 @@ export default function Home() {
       getCount();
       getTokenBalance();
     }
-    NewPredictionListener();
+    EventListener();
   }, [account]);
 
   const connectWallet = async () => {
@@ -84,8 +88,12 @@ export default function Home() {
     const DiceContract = await getContract(Provider, true);
     let count = await DiceContract.diceResult();
     let standby = await DiceContract.standby();
+    let date = new Date(standby * 1000).toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    console.log(Date.now() - standby * 1000);
     console.log("got diceresult:", count.toString());
-    console.log("got standby:", standby.toString());
+    console.log("got standby:", date);
   };
   const getContract = (ProviderOrSigner, Dice = false) => {
     const TokenContract = new Contract(
@@ -123,10 +131,10 @@ export default function Home() {
     const TokenContract = await getContract(Signer);
     const DiceContract = await getContract(Signer, true);
     try {
-      setNotification("approving Dice Game contract to user Token");
+      setNotification("approving Dice Game contract to use Token");
       let txn = await TokenContract.approve(DiceGameAddr, 1);
       await txn.wait();
-      setNotification("Approved,Now Prediction is going on");
+      setNotification("Approved,Now Confirm the Prediction");
       txn = await DiceContract.predict(x);
       await txn.wait();
       setNotification("Done");
@@ -136,16 +144,35 @@ export default function Home() {
     getCount();
   };
 
-  const NewPredictionListener = async () => {
+  const EventListener = async () => {
     try {
       const Signer = await getProviderOrSigner(true);
       const DiceContract = await getContract(Signer, true);
       DiceContract.on("NewPrediction", (value, time, from) => {
         console.log(value, time, from);
       });
+      DiceContract.on("ResetAll", () => {
+        setPredictionCount(0);
+        setPredictionslist([]);
+      });
     } catch (error) {
       console.log(error);
     }
+  };
+  const getAllPredictions = async () => {
+    const Provider = await getProviderOrSigner();
+    const DiceContract = await getContract(Provider, true);
+    let list = [];
+    for (let i = 0; i < parseInt(predictionCount); i++) {
+      let { from, time, value } = await DiceContract.predictions(i);
+      let date = new Date(time * 1000).toLocaleString("en-US", {
+        timeZone: "Asia/Kolkata",
+      });
+      value = value.toString();
+      list.push({ from, date, value });
+    }
+    console.log(list);
+    setPredictionslist(list);
   };
   return (
     <div className="bg-[#0F172A] min-h-[100vh]">
@@ -172,7 +199,9 @@ export default function Home() {
           />
         </section>
         <aside className="w-3/12">
-          <ListPredictions />
+          {predictionslist.length !== 0 && (
+            <ListPredictions predictionslist={predictionslist} />
+          )}
         </aside>
       </main>
 
@@ -188,6 +217,7 @@ export default function Home() {
         >
           built by @sharathkrml
         </a>
+        <button onClick={getDiceResult} className="p-2 bg-red-50">find standby</button>
       </footer>
     </div>
   );
