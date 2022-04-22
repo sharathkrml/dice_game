@@ -13,6 +13,7 @@
     "@openzeppelin/contracts": "^4.5.0",
     "dotenv": "^16.0.0",
     "next": "12.1.5",
+    "rc-progress": "^3.2.4",
     "react": "18.0.0",
     "react-dom": "18.0.0"
   },
