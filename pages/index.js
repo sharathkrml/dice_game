@@ -4,7 +4,50 @@ import MainComponent from "../components/MainComponent";
 import Navbar from "../components/Navbar";
 import twitterLogo from "../public/twitter-logo.svg";
 import Image from "next/image";
+import Web3Modal from "web3modal";
+import { useState, useEffect, useRef } from "react";
+import { providers } from "ethers";
 export default function Home() {
+  const [account, setAccount] = useState("");
+  const Web3Ref = useRef();
+  useEffect(() => {
+    if (!account) {
+      Web3Ref.current = new Web3Modal({
+        network: "rinkeby",
+        disableInjectedProvider: false,
+        providerOptions: {},
+      });
+    }
+    connectWallet();
+  }, [account]);
+  const connectWallet = async () => {
+    try {
+      console.log("connect");
+      await getProviderOrSigner();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const getProviderOrSigner = async (needSigner = false) => {
+    console.log("getProviderOrSigner");
+    const connection = await Web3Ref.current.connect();
+    if (!account) {
+      setAccount(connection.selectedAddress);
+    }
+
+    const provider = new providers.Web3Provider(connection);
+    const { chainId } = await provider.getNetwork();
+    if (chainId !== 4) {
+      window.alert("Change the network to Rinkeby");
+      throw new Error("Change network to Rinkeby");
+    }
+    if (needSigner) {
+      const signer = provider.getSigner();
+      return signer;
+    }
+    return provider;
+  };
+
   return (
     <div className="bg-[#0F172A] min-h-[100vh]">
       <Head>
@@ -13,7 +56,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <nav>
-        <Navbar />
+        <Navbar connectWallet={connectWallet} account={account} />
       </nav>
       <main className="flex justify-end gap-4">
         <section className="w-6/12">
