@@ -14,6 +14,6 @@ node scripts/sample-script.js
 npx hardhat help
 ```
 ```
-PredictionToken deployed to: 0xBB3338cbD2b71CDFf9045fb94F2275884f7392cE
-DiceGame deployed to: 0x52c5522f4d16C8f10fC4B820277d0a48E8BB0e79
+PredictionToken deployed to: 0xD0106D09Ceb64467C8e005ec1C139Fa89E2f9851
+DiceGame deployed to: 0x48a8359D0756824cfdA03cfE8AB1AD494d4B5Ddd
 ```

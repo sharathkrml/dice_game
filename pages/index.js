@@ -10,13 +10,19 @@ import { providers, Contract } from "ethers";
 import { PredictionTokenAddr, DiceGameAddr } from "../constants";
 import PredictionTokenABI from "../artifacts/contracts/PredictionToken.sol/PredictionToken.json";
 import DiceGameABI from "../artifacts/contracts/DiceGame.sol/DiceGame.json";
-
 export default function Home() {
   const [account, setAccount] = useState("");
   const [predictionCount, setPredictionCount] = useState(0);
   const [tokenBalance, setTokenBalance] = useState(0);
   const [minting, setMinting] = useState(false);
+  const [notification, setNotification] = useState("");
   const Web3Ref = useRef();
+  useEffect(() => {
+    if (predictionCount == 6) {
+      getDiceResult();
+    }
+  }, [predictionCount]);
+
   useEffect(() => {
     if (!account) {
       Web3Ref.current = new Web3Modal({
@@ -30,7 +36,9 @@ export default function Home() {
       getCount();
       getTokenBalance();
     }
+    NewPredictionListener();
   }, [account]);
+
   const connectWallet = async () => {
     try {
       await getProviderOrSigner();
@@ -71,6 +79,14 @@ export default function Home() {
     console.log("got count:", count.toString());
     setPredictionCount(count.toString());
   };
+  const getDiceResult = async () => {
+    const Provider = await getProviderOrSigner();
+    const DiceContract = await getContract(Provider, true);
+    let count = await DiceContract.diceResult();
+    let standby = await DiceContract.standby();
+    console.log("got diceresult:", count.toString());
+    console.log("got standby:", standby.toString());
+  };
   const getContract = (ProviderOrSigner, Dice = false) => {
     const TokenContract = new Contract(
       PredictionTokenAddr,
@@ -101,6 +117,36 @@ export default function Home() {
       console.log(error);
     }
   };
+
+  const predict = async (x) => {
+    const Signer = await getProviderOrSigner(true);
+    const TokenContract = await getContract(Signer);
+    const DiceContract = await getContract(Signer, true);
+    try {
+      setNotification("approving Dice Game contract to user Token");
+      let txn = await TokenContract.approve(DiceGameAddr, 1);
+      await txn.wait();
+      setNotification("Approved,Now Prediction is going on");
+      txn = await DiceContract.predict(x);
+      await txn.wait();
+      setNotification("Done");
+    } catch (error) {
+      console.log(error);
+    }
+    getCount();
+  };
+
+  const NewPredictionListener = async () => {
+    try {
+      const Signer = await getProviderOrSigner(true);
+      const DiceContract = await getContract(Signer, true);
+      DiceContract.on("NewPrediction", (value, time, from) => {
+        console.log(value, time, from);
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="bg-[#0F172A] min-h-[100vh]">
       <Head>
@@ -119,7 +165,11 @@ export default function Home() {
       </nav>
       <main className="flex justify-end gap-4 px-10">
         <section className="w-6/12">
-          <MainComponent predictionCount={predictionCount} />
+          <MainComponent
+            notification={notification}
+            predictionCount={predictionCount}
+            predict={predict}
+          />
         </section>
         <aside className="w-3/12">
           <ListPredictions />

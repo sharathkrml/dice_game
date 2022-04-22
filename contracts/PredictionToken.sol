@@ -7,6 +7,6 @@ contract PredictionToken is ERC20 {
     constructor() ERC20("PredictionToken", "PTK") {}
 
     function mint() public {
-        _mint(msg.sender, 100);
+        _mint(msg.sender, 10);
     }
 }

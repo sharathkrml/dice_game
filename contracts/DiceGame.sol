@@ -16,7 +16,7 @@ contract DiceGame is KeeperCompatibleInterface {
     uint256 public standby;
     Prediction[6] public predictions;
     event NewPrediction(Prediction);
-
+    event ResetAll();
     constructor(address _tokenAddress) {
         PredictionToken = IERC20(_tokenAddress);
     }
@@ -65,7 +65,9 @@ contract DiceGame is KeeperCompatibleInterface {
     function resetPredictions() internal {
         diceResult = 0;
         count = 0;
+        standby = 0;
         delete predictions;
+        emit ResetAll();
     }
 
     function checkUpkeep(
