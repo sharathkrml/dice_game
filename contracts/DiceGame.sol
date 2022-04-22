@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DiceGame {
+    IERC20 PredictionToken;
     struct Prediction {
         uint256 value;
         uint256 time;
@@ -11,8 +13,14 @@ contract DiceGame {
     uint256 public count;
     Prediction[6] public predictions;
     event NewPrediction(Prediction);
+
+    constructor(address _tokenAddress) {
+        PredictionToken = IERC20(_tokenAddress);
+    }
+
     function predict(uint256 _value) external {
         require(count < 6, "Cannot add more");
+        PredictionToken.transferFrom(msg.sender, address(this), 1);
         Prediction memory newPrediction = Prediction(
             _value,
             block.timestamp,
@@ -49,9 +57,11 @@ contract DiceGame {
                 }
             }
         }
+        PredictionToken.transfer(predictions[0].from, 6);
     }
-    function resetPredictions() external{
-        count=0;
+
+    function resetPredictions() external {
+        count = 0;
         delete predictions;
     }
 }

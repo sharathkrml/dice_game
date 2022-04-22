@@ -3,22 +3,33 @@ const { ethers } = require("hardhat");
 
 describe("DiceGame", function () {
   let DiceGame;
+  let PredictionToken;
   let owner;
   let accounts;
   beforeEach(async () => {
+    const PredictionTokenFactory = await ethers.getContractFactory(
+      "PredictionToken"
+    );
+    PredictionToken = await PredictionTokenFactory.deploy();
+    await PredictionToken.deployed();
     const DiceGameFactory = await ethers.getContractFactory("DiceGame");
-    DiceGame = await DiceGameFactory.deploy();
+    DiceGame = await DiceGameFactory.deploy(PredictionToken.address);
     await DiceGame.deployed();
     [owner, ...accounts] = await ethers.getSigners();
+    for (let i = 0; i < 6; i++) {
+      await PredictionToken.connect(accounts[i]).mint();
+    }
   });
   describe("Add predictions", () => {
     it("Add Prediction", async function () {
       for (let i = 0; i < 6; i++) {
+        await PredictionToken.connect(accounts[i]).approve(DiceGame.address, 1);
         expect(await DiceGame.connect(accounts[i]).predict(i + 1)).to.emit(
           DiceGame,
           "NewPrediction"
         );
       }
+      // console.log(await PredictionToken.balanceOf(DiceGame.address));
       //   for (let i = 0; i < 6; i++) {
       //     let res = await DiceGame.predictions(i);
       //     let value = res.value.toString();
@@ -34,6 +45,8 @@ describe("DiceGame", function () {
     });
     it("Cannot add more than 6", async () => {
       for (let i = 0; i < 6; i++) {
+        await PredictionToken.connect(accounts[i]).approve(DiceGame.address, 1);
+
         expect(await DiceGame.connect(accounts[i]).predict(i + 1)).to.emit(
           DiceGame,
           "NewPrediction"
@@ -51,6 +64,8 @@ describe("DiceGame", function () {
       let res = 3;
       let txn;
       for (let i = 0; i < pred.length; i++) {
+        await PredictionToken.connect(accounts[i]).approve(DiceGame.address, 1);
+
         txn = await DiceGame.connect(accounts[i]).predict(pred[i]);
         await txn.wait();
       }
@@ -81,14 +96,21 @@ describe("DiceGame", function () {
       let res = 2;
       let txn;
       for (let i = 0; i < pred.length; i++) {
+        await PredictionToken.connect(accounts[i]).approve(DiceGame.address, 1);
+
         txn = await DiceGame.connect(accounts[i]).predict(pred[i]);
         await txn.wait();
       }
+
+      console.log(await PredictionToken.balanceOf(DiceGame.address));
+      console.log(await PredictionToken.balanceOf(accounts[2].address));
       txn = await DiceGame.getRankList(res);
       await txn.wait();
       //   1st
       let a = await DiceGame.predictions(0);
       expect(a.from).to.equal(accounts[2].address);
+      console.log(await PredictionToken.balanceOf(DiceGame.address));
+      console.log(await PredictionToken.balanceOf(accounts[2].address));
       a = await DiceGame.predictions(1);
       //   2nd
       expect(a.from).to.equal(accounts[3].address);
@@ -111,6 +133,8 @@ describe("DiceGame", function () {
       let txn;
       let res;
       for (let i = 0; i < 6; i++) {
+        await PredictionToken.connect(accounts[i]).approve(DiceGame.address, 1);
+
         txn = await DiceGame.connect(accounts[i]).predict(i);
         txn.wait();
         expect(await DiceGame.count()).to.equal(i + 1);
