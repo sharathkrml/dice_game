@@ -1,11 +1,22 @@
 import React from "react";
 
-function Navbar({ connectWallet, account }) {
+function Navbar({ connectWallet, account, tokenBalance, mintToken, minting }) {
   return (
     <div className="flex justify-end">
-      <button className="p-2 m-2 rounded-lg bg-red-400 text-white">Mint</button>
+      {minting ? (
+        <button className="p-2 m-2 rounded-lg bg-slate-500 text-white">
+          Minting..
+        </button>
+      ) : (
+        <button
+          className="p-2 m-2 rounded-lg bg-red-400 text-white"
+          onClick={mintToken}
+        >
+          Mint
+        </button>
+      )}
       <div className="p-2 m-2 rounded-lg bg-red-400 text-white">
-        Balance:100
+        Balance:{tokenBalance}
       </div>
       {account && (
         <button className="p-2 m-2 rounded-lg bg-red-400 text-white">

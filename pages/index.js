@@ -6,9 +6,15 @@ import twitterLogo from "../public/twitter-logo.svg";
 import Image from "next/image";
 import Web3Modal from "web3modal";
 import { useState, useEffect, useRef } from "react";
-import { providers } from "ethers";
+import { providers, Contract } from "ethers";
+import { PredictionTokenAddr, DiceGameAddr } from "../constants";
+import PredictionTokenABI from "../artifacts/contracts/PredictionToken.sol/PredictionToken.json";
+import DiceGameABI from "../artifacts/contracts/DiceGame.sol/DiceGame.json";
+
 export default function Home() {
   const [account, setAccount] = useState("");
+  const [tokenBalance, setTokenBalance] = useState(0);
+  const [minting, setMinting] = useState(false);
   const Web3Ref = useRef();
   useEffect(() => {
     if (!account) {
@@ -19,17 +25,18 @@ export default function Home() {
       });
     }
     connectWallet();
+    if (account) {
+      getTokenBalance();
+    }
   }, [account]);
   const connectWallet = async () => {
     try {
-      console.log("connect");
       await getProviderOrSigner();
     } catch (error) {
       console.log(error);
     }
   };
   const getProviderOrSigner = async (needSigner = false) => {
-    console.log("getProviderOrSigner");
     const connection = await Web3Ref.current.connect();
     if (!account) {
       setAccount(connection.selectedAddress);
@@ -47,7 +54,44 @@ export default function Home() {
     }
     return provider;
   };
-
+  const getTokenBalance = async () => {
+    const Signer = await getProviderOrSigner(true);
+    const address = await Signer.getAddress();
+    const TokenContract = getContract(Signer);
+    let balance = await TokenContract.balanceOf(address);
+    console.log("got balance", balance.toString());
+    setTokenBalance(balance.toString());
+  };
+  const getContract = (ProviderOrSigner, Dice = false) => {
+    const TokenContract = new Contract(
+      PredictionTokenAddr,
+      PredictionTokenABI.abi,
+      ProviderOrSigner
+    );
+    if (Dice) {
+      const DiceContract = new Contract(
+        DiceGameAddr,
+        DiceGameABI.abi,
+        ProviderOrSigner
+      );
+      return DiceContract;
+    }
+    return TokenContract;
+  };
+  const mintToken = async () => {
+    const Signer = await getProviderOrSigner(true);
+    const TokenContract = getContract(Signer);
+    try {
+      let txn = await TokenContract.mint();
+      setMinting(true);
+      await txn.wait();
+      setMinting(false);
+      console.log("txn completed....");
+      getTokenBalance();
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="bg-[#0F172A] min-h-[100vh]">
       <Head>
@@ -56,9 +100,15 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <nav>
-        <Navbar connectWallet={connectWallet} account={account} />
+        <Navbar
+          connectWallet={connectWallet}
+          tokenBalance={tokenBalance}
+          account={account}
+          mintToken={mintToken}
+          minting={minting}
+        />
       </nav>
-      <main className="flex justify-end gap-4">
+      <main className="flex justify-end gap-4 px-10">
         <section className="w-6/12">
           <MainComponent />
         </section>
