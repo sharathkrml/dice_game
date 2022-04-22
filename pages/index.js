@@ -13,6 +13,7 @@ import DiceGameABI from "../artifacts/contracts/DiceGame.sol/DiceGame.json";
 
 export default function Home() {
   const [account, setAccount] = useState("");
+  const [predictionCount, setPredictionCount] = useState(0);
   const [tokenBalance, setTokenBalance] = useState(0);
   const [minting, setMinting] = useState(false);
   const Web3Ref = useRef();
@@ -26,6 +27,7 @@ export default function Home() {
     }
     connectWallet();
     if (account) {
+      getCount();
       getTokenBalance();
     }
   }, [account]);
@@ -61,6 +63,13 @@ export default function Home() {
     let balance = await TokenContract.balanceOf(address);
     console.log("got balance", balance.toString());
     setTokenBalance(balance.toString());
+  };
+  const getCount = async () => {
+    const Provider = await getProviderOrSigner();
+    const DiceContract = await getContract(Provider, true);
+    let count = await DiceContract.count();
+    console.log("got count:", count.toString());
+    setPredictionCount(count.toString());
   };
   const getContract = (ProviderOrSigner, Dice = false) => {
     const TokenContract = new Contract(
@@ -110,7 +119,7 @@ export default function Home() {
       </nav>
       <main className="flex justify-end gap-4 px-10">
         <section className="w-6/12">
-          <MainComponent />
+          <MainComponent predictionCount={predictionCount} />
         </section>
         <aside className="w-3/12">
           <ListPredictions />
