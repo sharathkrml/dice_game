@@ -16,7 +16,7 @@ contract DiceGame is KeeperCompatibleInterface {
     uint256 public standby;
     Prediction[6] public predictions;
     event NewPrediction(Prediction);
-    event ResultPublished(address winner);
+    event ResultPublished();
     event ResetAll();
 
     constructor(address _tokenAddress) {
@@ -62,7 +62,6 @@ contract DiceGame is KeeperCompatibleInterface {
             }
         }
         PredictionToken.transfer(predictions[0].from, 6);
-        emit ResultPublished(predictions[0].from);
     }
 
     function resetPredictions() internal {
@@ -96,6 +95,7 @@ contract DiceGame is KeeperCompatibleInterface {
             diceResult = ((block.timestamp + block.difficulty) % 6) + 1;
             getRankList(diceResult);
             standby = block.timestamp + 3 minutes;
+            emit ResultPublished();
         }
         if (diceResult != 0 && block.timestamp > standby) {
             resetPredictions();

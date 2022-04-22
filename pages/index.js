@@ -17,10 +17,13 @@ export default function Home() {
   const [minting, setMinting] = useState(false);
   const [notification, setNotification] = useState("");
   const [predictionslist, setPredictionslist] = useState([]);
+  const [winner, setWinner] = useState("");
+  const [diceResult, setDiceResult] = useState(0);
+  const [loading, setLoading] = useState(false);
   const Web3Ref = useRef();
   useEffect(() => {
     if (predictionCount == 6) {
-      getDiceResult();
+      setLoading(true);
     }
     if (predictionCount != 0) {
       getAllPredictions();
@@ -86,12 +89,14 @@ export default function Home() {
   const getDiceResult = async () => {
     const Provider = await getProviderOrSigner();
     const DiceContract = await getContract(Provider, true);
-    let count = await DiceContract.diceResult();
+    let diceResult = await DiceContract.diceResult();
     let standby = await DiceContract.standby();
     let date = new Date(standby * 1000).toLocaleString("en-US", {
       timeZone: "Asia/Kolkata",
     });
-    console.log(Date.now() - standby * 1000);
+    setDiceResult(diceResult);
+
+    console.log(standby * 1000 - Date.now());
     console.log("got diceresult:", count.toString());
     console.log("got standby:", date);
   };
@@ -142,6 +147,7 @@ export default function Home() {
       console.log(error);
     }
     getCount();
+    getTokenBalance();
   };
 
   const EventListener = async () => {
@@ -152,8 +158,18 @@ export default function Home() {
         console.log(value, time, from);
       });
       DiceContract.on("ResetAll", () => {
+        console.log("reset all");
         setPredictionCount(0);
         setPredictionslist([]);
+      });
+      DiceContract.on("ResultPublished", () => {
+        setLoading(false);
+        getDiceResult();
+        getAllPredictions().then((res) => {
+          setWinner(res[0].from);
+          console.log(res);
+        });
+        console.log("ResultPublished");
       });
     } catch (error) {
       console.log(error);
@@ -171,8 +187,8 @@ export default function Home() {
       value = value.toString();
       list.push({ from, date, value });
     }
-    console.log(list);
     setPredictionslist(list);
+    return list;
   };
   return (
     <div className="bg-[#0F172A] min-h-[100vh]">
@@ -190,20 +206,26 @@ export default function Home() {
           minting={minting}
         />
       </nav>
-      <main className="flex justify-end gap-4 px-10">
-        <section className="w-6/12">
-          <MainComponent
-            notification={notification}
-            predictionCount={predictionCount}
-            predict={predict}
-          />
-        </section>
-        <aside className="w-3/12">
-          {predictionslist.length !== 0 && (
-            <ListPredictions predictionslist={predictionslist} />
-          )}
-        </aside>
-      </main>
+      {loading ? (
+        <main>
+          <h1>Loading</h1>
+        </main>
+      ) : (
+        <main className="flex justify-end gap-4 px-10">
+          <section className="w-6/12">
+            <MainComponent
+              notification={notification}
+              predictionCount={predictionCount}
+              predict={predict}
+            />
+          </section>
+          <aside className="w-3/12">
+            {predictionslist.length !== 0 && (
+              <ListPredictions predictionslist={predictionslist} />
+            )}
+          </aside>
+        </main>
+      )}
 
       <footer className=" flex items-center justify-center">
         <div className="w-10">
@@ -217,7 +239,9 @@ export default function Home() {
         >
           built by @sharathkrml
         </a>
-        <button onClick={getDiceResult} className="p-2 bg-red-50">find standby</button>
+        <button onClick={getDiceResult} className="p-2 bg-red-50">
+          find standby
+        </button>
       </footer>
     </div>
   );

@@ -1,2 +1,2 @@
-export const PredictionTokenAddr = "0xD0106D09Ceb64467C8e005ec1C139Fa89E2f9851";
-export const DiceGameAddr = "0x48a8359D0756824cfdA03cfE8AB1AD494d4B5Ddd";
+export const PredictionTokenAddr = "0x2C4b53f8CB8b18D9F8dB5A0B8A20f384C0FC738c";
+export const DiceGameAddr = "0xe1c015022b5fd7835ec67e182A2A7321A307005c";
