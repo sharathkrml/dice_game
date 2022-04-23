@@ -1,6 +1,7 @@
 import Head from "next/head";
 import ListPredictions from "../components/ListPredictions";
 import MainComponent from "../components/MainComponent";
+import WinnerComponent from "../components/WinnerComponent";
 import Navbar from "../components/Navbar";
 import twitterLogo from "../public/twitter-logo.svg";
 import Image from "next/image";
@@ -11,6 +12,7 @@ import { PredictionTokenAddr, DiceGameAddr } from "../constants";
 import PredictionTokenABI from "../artifacts/contracts/PredictionToken.sol/PredictionToken.json";
 import DiceGameABI from "../artifacts/contracts/DiceGame.sol/DiceGame.json";
 export default function Home() {
+  const [published, setPublished] = useState(true);
   return (
     <div className="bg-[#0F172A] min-h-[100vh]">
       <Head>
@@ -24,11 +26,9 @@ export default function Home() {
 
       <main className="flex justify-end gap-4 px-10">
         <section className="w-6/12">
-          <MainComponent />
+          {published ? <WinnerComponent /> : <MainComponent />}
         </section>
-        <aside className="w-3/12">
-          <ListPredictions />
-        </aside>
+        <aside className="w-3/12">{!published && <ListPredictions />}</aside>
       </main>
 
       <footer className=" flex items-center justify-center">
