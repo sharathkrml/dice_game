@@ -18,6 +18,9 @@ export default function Home() {
   const [tokenBalance, setTokenBalance] = useState(0);
   const [count, setCount] = useState(0);
   const [predictionslist, setPredictionslist] = useState([]);
+  const [diceResult, setDiceResult] = useState(0);
+  const [standBy, setStandBy] = useState(0);
+  const [notification, setNotification] = useState("");
   useEffect(() => {
     if (!account) {
       web3ref.current = new Web3Modal({
@@ -42,13 +45,15 @@ export default function Home() {
       const Provider = await getProviderOrSigner();
       const DiceContract = await getContract(Provider, true);
       DiceContract.on("NewPrediction", (value, time, from) => {
-        console.log(value, time, from);
+        getResultAndPredictionlist();
       });
       DiceContract.on("ResetAll", () => {
         console.log("reset all");
+        getResultAndPredictionlist();
       });
       DiceContract.on("Published", () => {
         console.log("Published");
+        getResultAndPredictionlist();
       });
     } catch (error) {
       console.log(error);
@@ -59,11 +64,23 @@ export default function Home() {
     const address = await Signer.getAddress();
     const TokenContract = getContract(Signer);
     let balance = await TokenContract.balanceOf(address);
-    console.log("got balance", balance.toString());
+    console.log("Token balance", balance.toString());
     setTokenBalance(balance.toString());
     const DiceContract = await getContract(Signer, true);
     let result = await DiceContract.result();
-    setCount(result.count);
+    if (result.diceResult != 0 && result.standby != 0) {
+      setPublished(true);
+    }
+    if (result.diceResult == 0 && result.standby == 0 && result.count == 0) {
+      setPublished(false);
+    }
+    setDiceResult(result.diceResult.toString());
+    let date = new Date(result.standby * 1000).toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    console.log(result.standby);
+    setStandBy(date);
+    setCount(result.count.toString());
     let list = [];
     for (let i = 0; i < parseInt(result.count); i++) {
       let { from, time, value } = await DiceContract.predictions(i);
@@ -81,12 +98,15 @@ export default function Home() {
     const TokenContract = await getContract(Signer);
     const DiceContract = await getContract(Signer, true);
     try {
+      setNotification("approve to use token");
       let txn = await TokenContract.approve(DiceGameAddr, 1);
+      setNotification("loading...");
       await txn.wait();
-      console.log("approve");
+      setNotification("approved ,confirm prediction");
       txn = await DiceContract.predict(x);
+      setNotification("loading...");
       await txn.wait();
-      console.log("predict");
+      setNotification("Done");
     } catch (error) {
       console.log(error);
     }
@@ -145,9 +165,17 @@ export default function Home() {
       <main className="flex justify-end gap-4 px-10">
         <section className="w-6/12">
           {published ? (
-            <WinnerComponent />
+            <WinnerComponent
+              standBy={standBy}
+              diceResult={diceResult}
+              predictionslist={predictionslist}
+            />
           ) : (
-            <MainComponent predict={predict} count={count} />
+            <MainComponent
+              notification={notification}
+              predict={predict}
+              count={count}
+            />
           )}
         </section>
         <aside className="w-3/12">

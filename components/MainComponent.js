@@ -1,6 +1,6 @@
 import React from "react";
 import { Line } from "rc-progress";
-function MainComponent({ count, predict }) {
+function MainComponent({ count, predict, notification }) {
   const btnStyle = "px-10 py-8  rounded-lg bg-red-500 text-2xl text-white m-2";
   return (
     <div className=" flex flex-col h-[100%] items-center">
@@ -9,6 +9,9 @@ function MainComponent({ count, predict }) {
       <div className="w-60">
         <Line percent={(count * 100) / 6} strokeWidth="4" strokeColor="red" />
       </div>
+      {notification && (
+        <div className="text-white text-sm my-3">{notification}</div>
+      )}
       <div className="text-white mt-3">Predict</div>
       <div className="grid grid-cols-3 mt-5">
         <button onClick={() => predict(1)} className={btnStyle}>
