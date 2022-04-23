@@ -9,8 +9,8 @@ import Web3Modal from "web3modal";
 import { useState, useEffect, useRef } from "react";
 import { providers, Contract } from "ethers";
 import { PredictionTokenAddr, DiceGameAddr } from "../constants";
-import PredictionTokenABI from "../artifacts/contracts/PredictionToken.sol/PredictionToken.json";
-import DiceGameABI from "../artifacts/contracts/DiceGame.sol/DiceGame.json";
+import PredictionTokenABI from "../utils/PredictionToken.json";
+import DiceGameABI from "../utils/DiceGame.json";
 export default function Home() {
   const web3ref = useRef();
   const [published, setPublished] = useState(false);
