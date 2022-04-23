@@ -11,12 +11,16 @@ contract DiceGame is KeeperCompatibleInterface {
         uint256 time;
         address from;
     }
-    uint256 public count;
-    uint256 public diceResult;
-    uint256 public standby;
+    struct Results {
+        uint8 count;
+        uint256 diceResult;
+        uint256 standby;
+    }
+    Results public result;
     Prediction[6] public predictions;
+
     event NewPrediction(Prediction);
-    event ResultPublished();
+    event Published();
     event ResetAll();
 
     constructor(address _tokenAddress) {
@@ -24,15 +28,15 @@ contract DiceGame is KeeperCompatibleInterface {
     }
 
     function predict(uint256 _value) external {
-        require(count < 6, "Cannot add more");
+        require(result.count < 6, "Can't add more");
         PredictionToken.transferFrom(msg.sender, address(this), 1);
         Prediction memory newPrediction = Prediction(
             _value,
             block.timestamp,
             msg.sender
         );
-        predictions[count] = newPrediction;
-        count++;
+        predictions[result.count] = newPrediction;
+        result.count++;
         emit NewPrediction(newPrediction);
     }
 
@@ -65,9 +69,7 @@ contract DiceGame is KeeperCompatibleInterface {
     }
 
     function resetPredictions() internal {
-        diceResult = 0;
-        count = 0;
-        standby = 0;
+        delete result;
         delete predictions;
         emit ResetAll();
     }
@@ -84,20 +86,20 @@ contract DiceGame is KeeperCompatibleInterface {
         )
     {
         upkeepNeeded =
-            (diceResult == 0 && count == 6) ||
-            (diceResult != 0 && block.timestamp > standby);
+            (result.diceResult == 0 && result.count == 6) ||
+            (result.diceResult != 0 && block.timestamp > result.standby);
     }
 
     function performUpkeep(
         bytes calldata /* performData */
     ) external override {
-        if (diceResult == 0 && count == 6) {
-            diceResult = ((block.timestamp + block.difficulty) % 6) + 1;
-            getRankList(diceResult);
-            standby = block.timestamp + 3 minutes;
-            emit ResultPublished();
+        if (result.diceResult == 0 && result.count == 6) {
+            result.diceResult = ((block.timestamp + block.difficulty) % 6) + 1;
+            getRankList(result.diceResult);
+            result.standby = block.timestamp + 5 minutes;
+            emit Published();
         }
-        if (diceResult != 0 && block.timestamp > standby) {
+        if (result.diceResult != 0 && block.timestamp > result.standby) {
             resetPredictions();
         }
     }

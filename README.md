@@ -15,6 +15,6 @@ npx hardhat help
 ```
 
 ```
-PredictionToken deployed to: 0xe16375fF990EcBCC6656Ffc88fe77175B6da5D88
-DiceGame deployed to: 0x4631eE6e28e4015fA6cA0174be60a15D9C6AC5A0
+PredictionToken deployed to: 0x2D8Da791952D1c1236cd35B2841479348F2FEA4A
+DiceGame deployed to: 0xA10728b8c0F42985c8259Ce48017d6e814807dA2
 ```
