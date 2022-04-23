@@ -12,7 +12,121 @@ import { PredictionTokenAddr, DiceGameAddr } from "../constants";
 import PredictionTokenABI from "../artifacts/contracts/PredictionToken.sol/PredictionToken.json";
 import DiceGameABI from "../artifacts/contracts/DiceGame.sol/DiceGame.json";
 export default function Home() {
-  const [published, setPublished] = useState(true);
+  const web3ref = useRef();
+  const [published, setPublished] = useState(false);
+  const [account, setAccount] = useState("");
+  const [tokenBalance, setTokenBalance] = useState(0);
+  const [count, setCount] = useState(0);
+  const [predictionslist, setPredictionslist] = useState([]);
+  useEffect(() => {
+    if (!account) {
+      web3ref.current = new Web3Modal({
+        network: "rinkeby",
+        disableInjectedProvider: false,
+        providerOptions: {},
+      });
+    } else {
+      EventListener();
+      getResultAndPredictionlist();
+    }
+  }, [account]);
+  const connectWallet = async () => {
+    try {
+      await getProviderOrSigner();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const EventListener = async () => {
+    try {
+      const Provider = await getProviderOrSigner();
+      const DiceContract = await getContract(Provider, true);
+      DiceContract.on("NewPrediction", (value, time, from) => {
+        console.log(value, time, from);
+      });
+      DiceContract.on("ResetAll", () => {
+        console.log("reset all");
+      });
+      DiceContract.on("Published", () => {
+        console.log("Published");
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const getResultAndPredictionlist = async () => {
+    const Signer = await getProviderOrSigner(true);
+    const address = await Signer.getAddress();
+    const TokenContract = getContract(Signer);
+    let balance = await TokenContract.balanceOf(address);
+    console.log("got balance", balance.toString());
+    setTokenBalance(balance.toString());
+    const DiceContract = await getContract(Signer, true);
+    let result = await DiceContract.result();
+    setCount(result.count);
+    let list = [];
+    for (let i = 0; i < parseInt(result.count); i++) {
+      let { from, time, value } = await DiceContract.predictions(i);
+      let date = new Date(time * 1000).toLocaleString("en-US", {
+        timeZone: "Asia/Kolkata",
+      });
+      value = value.toString();
+      list.push({ from, date, value });
+    }
+    console.log(list);
+    setPredictionslist(list);
+  };
+  const predict = async (x) => {
+    const Signer = await getProviderOrSigner(true);
+    const TokenContract = await getContract(Signer);
+    const DiceContract = await getContract(Signer, true);
+    try {
+      let txn = await TokenContract.approve(DiceGameAddr, 1);
+      await txn.wait();
+      console.log("approve");
+      txn = await DiceContract.predict(x);
+      await txn.wait();
+      console.log("predict");
+    } catch (error) {
+      console.log(error);
+    }
+    getResultAndPredictionlist();
+  };
+  const getContract = (ProviderOrSigner, Dice = false) => {
+    const TokenContract = new Contract(
+      PredictionTokenAddr,
+      PredictionTokenABI.abi,
+      ProviderOrSigner
+    );
+    if (Dice) {
+      const DiceContract = new Contract(
+        DiceGameAddr,
+        DiceGameABI.abi,
+        ProviderOrSigner
+      );
+      return DiceContract;
+    }
+    return TokenContract;
+  };
+
+  const getProviderOrSigner = async (needSigner = false) => {
+    const connection = await web3ref.current.connect();
+    if (!account) {
+      setAccount(connection.selectedAddress);
+    }
+
+    const provider = new providers.Web3Provider(connection);
+    const { chainId } = await provider.getNetwork();
+    if (chainId !== 4) {
+      window.alert("Change the network to Rinkeby");
+      throw new Error("Change network to Rinkeby");
+    }
+    if (needSigner) {
+      const signer = provider.getSigner();
+      return signer;
+    }
+    return provider;
+  };
   return (
     <div className="bg-[#0F172A] min-h-[100vh]">
       <Head>
@@ -21,14 +135,24 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <nav>
-        <Navbar />
+        <Navbar
+          account={account}
+          connectWallet={connectWallet}
+          tokenBalance={tokenBalance}
+        />
       </nav>
 
       <main className="flex justify-end gap-4 px-10">
         <section className="w-6/12">
-          {published ? <WinnerComponent /> : <MainComponent />}
+          {published ? (
+            <WinnerComponent />
+          ) : (
+            <MainComponent predict={predict} count={count} />
+          )}
         </section>
-        <aside className="w-3/12">{!published && <ListPredictions />}</aside>
+        <aside className="w-3/12">
+          {!published && <ListPredictions predictionslist={predictionslist} />}
+        </aside>
       </main>
 
       <footer className=" flex items-center justify-center">

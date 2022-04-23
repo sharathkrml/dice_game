@@ -1,11 +1,11 @@
 import React from "react";
 
-function PredictionCard() {
+function PredictionCard({ prediction }) {
   return (
     <div className="py-2">
-      <div className="text-sm text-white">From: 0xfgjfejhfew</div>
-      <div className="text-sm text-white">Value: 10</div>
-      <div className="text-sm text-white">Time: 7</div>
+      <div className="text-sm text-white">From: {prediction.from}</div>
+      <div className="text-sm text-white">Value: {prediction.value}</div>
+      <div className="text-sm text-white">Time: {prediction.date}</div>
     </div>
   );
 }
